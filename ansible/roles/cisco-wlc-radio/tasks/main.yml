@@ -1,0 +1,40 @@
+- name: Set Variables
+  include_vars: vars/main.yml
+
+- name: SYS | DEFINE PROVIDER
+  set_fact:
+    cli:
+        username: "{{ creds['username'] }}"
+        password: "{{ creds['password'] }}"
+        timeout: 60
+    no_log: True
+
+- name: AIREOS | GET RADIO POLICY SETTINGS
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+      - command: grep include "{{ search_name }}" "show wlan {{ id_index }}"
+        prompt: "Press any key to continue.."
+        answer: /r
+    interval: 10
+    retries: 2
+  loop:
+    - 1
+    #- 2
+    #- 3
+  loop_control:
+    loop_var: id_index
+  register: show_wlan_id
+
+- name: Ensure outputs/ folder exists
+  file:
+    path: "outputs"
+    state: directory
+  run_once: true
+
+
+- name: "Write outputs to disk"
+  copy:
+    content: "{{ inventory_hostname}} {{ item.stdout | join('\n') | regex_search(regexp) }}\n"
+    dest: "outputs/radio_policy.csv"
+  loop: "{{ show_wlan_id.results }}"

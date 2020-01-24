@@ -1,0 +1,6 @@
+creds:
+  username: xxxxx
+  password: yyyyyy
+
+search_name: "Radio Policy"
+regexp: 'Radio Policy([^\n]+)'

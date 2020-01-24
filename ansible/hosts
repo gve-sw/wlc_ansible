@@ -1,0 +1,9 @@
+#localhost    ansible_connection=local
+
+# if using Ansible with python virtualenv, use localhost option below
+# with change to your python executable
+localhost    ansible_connection=local ansible_python_interpreter=/Users/jamah/sites/wlc-ansible2/bin/python
+
+# Replace for your cisco vim mgmt node
+[cisco-wlc]
+192.168.128.67

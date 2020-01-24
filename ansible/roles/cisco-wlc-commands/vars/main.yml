@@ -1,0 +1,8 @@
+
+creds:
+
+  username: xxxxx
+  password: yyyyy
+
+ftp:
+  endbootversion:  8.2.170.0

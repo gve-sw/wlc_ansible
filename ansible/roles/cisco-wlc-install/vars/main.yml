@@ -1,0 +1,13 @@
+
+creds:
+  username: xxxxx
+  password: yyyyyyy
+
+ftp:
+  username: xxxxx
+  password: yyyyyyy
+  ip: xxx.yyy.aaa.bbb
+  path: /downloads/
+  filename: AIR-CT5500-K9-8-2-170-0.aes
+  startbootversion: 8.0.152.0
+  endbootversion: 8.2.170.0

@@ -1,0 +1,40 @@
+#- name: SYS | OBTAIN LOGIN CREDENTIALS
+    #include_vars: /etc/ansible/vault.yaml
+    #no_log: True
+- name: Set Variables
+  include_vars: vars/main.yml
+
+
+- name: SYS | DEFINE PROVIDER
+  set_fact:
+    cli:
+        username: "{{ creds['username'] }}"
+        password: "{{ creds['password'] }}"
+        timeout: 60
+    no_log: True
+
+
+- name: AIREOS | RUN COMMAND APPLIED
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+        - show sysinfo
+        - show interface summary
+        - show memory summary
+    interval: 10
+    retries: 2
+  register: post_check
+
+- name: Show commands
+  debug:
+    msg: "{{ post_check }}"
+
+- name: AIREOS | Check Image
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+        - show sysinfo
+    interval: 10
+    retries: 2
+    wait_for: 
+        - result[0] contains Product Version.................................. {{ ftp.endbootversion }}

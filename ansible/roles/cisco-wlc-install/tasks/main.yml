@@ -1,0 +1,103 @@
+- name: Set Variables
+  include_vars: vars/main.yml
+
+- name: SYS | DEFINE PROVIDER
+  set_fact:
+    cli:
+        username: "{{ creds['username'] }}"
+        password: "{{ creds['password'] }}"
+        timeout: 60
+    no_log: True
+
+- name: AIREOS | FTP transfer info
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+      - transfer download mode ftp
+      - transfer download username {{ ftp.username }}
+      - transfer download password {{ ftp.password }}
+      - transfer download serverip {{ ftp.ip }}
+      - transfer download path {{ ftp.path }}
+      - transfer download filename {{ ftp.filename }}
+  register: post_check
+
+
+- name: AIREOS | Check Image
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+      - show boot
+    wait_for:
+      - result[0] contains Primary Boot Image............................... {{ ftp.startbootversion }}
+  register: post_check
+
+
+- name: AIREOS | Start transfer
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+      - command: transfer download start
+        prompt: "Are you sure you want to start?"
+        answer: "y"
+
+    timeout: 900
+    wait_for: result[0] contains "File transfer is successful"
+  register: upgrade_summary
+
+
+
+- name: Debug upgrade summary
+  debug: var=upgrade_summary.stdout
+
+
+- name: AIREOS | Check Image
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+        - show boot
+    wait_for:
+        - result[0] contains Primary Boot Image............................... {{ ftp.endbootversion }}
+  register: post_check
+
+
+- name: AIREOS | save config
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+      - "save config\ry\n"
+    timeout: 60
+  register: save_config
+  changed_when: "'Configuration Saved!' in save_config.stdout"
+
+
+
+- name: AIREOS | reboot system
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+       - reset system in 00:01:01 image swap reset-aps save-config
+    wait_for:
+       - result[0] contains System reset is scheduled
+  register: reboot_summary
+
+
+- debug:
+   var: reboot_summary.stdout
+
+- name: Wait for device to come back up
+  wait_for:
+    port: 22
+    timeout: 600
+    host: "{{ inventory_hostname }}"
+    delay: 300
+  delegate_to: localhost
+
+- name: AIREOS | Check Image
+  aireos_command:
+    provider: "{{ creds }}"
+    commands:
+        - show sysinfo
+    interval: 10
+    retries: 2
+    wait_for:
+        - result[0] contains Product Version.................................. {{ ftp.endbootversion }}
